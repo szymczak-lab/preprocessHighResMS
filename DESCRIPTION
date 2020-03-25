@@ -1,0 +1,24 @@
+Package: preprocessHighResMS
+Type: Package
+Title: Preprocessing of spectra data from high resolution mass spectrometry
+Version: 0.99.0
+Authors@R: person("Silke", "Szymczak", email = "szymczak@medinfo.uni-kiel.de",
+                  role = c("aut", "cre"))
+Description: Implementation of preprocessing methods for mass spectrometry data 
+   generated with high resolution technology (e.g. FT-ICR). The input are mass 
+   spectra in profile mode and stored in the mzML format and the output is 
+   SummarizedExperiment object containing intensity values for predefined 
+   metabolites. The package provides functions to define features based on 
+   chemical formulas and adducts, to extract the corresponding feature intensities,
+   to filter features based on peak detection characteristics and to assign 
+   features to the most probable metabolite. Many of the functions use methods 
+   implemented in different CRAN and Bioconductor packages.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    enviPat,
+    FTICRMS,
+    stats,
+    xcms
+RoxygenNote: 6.1.1
