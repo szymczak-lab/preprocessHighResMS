@@ -27,6 +27,7 @@
 #'   \item chemical.form.adduct: chemical formula of adduct
 #'   \item chemical.form: original chemical formula
 #'   \item adduct.name: adduct used
+#'   \item charge: charge of adduct
 #'   \item chemical.form.isotope: chemical formula of isotope of adduct
 #'   \item m.z: theoretical mz value of isotope
 #'   \item abundance: theoretical abundance of isotope peak. Most abundant
@@ -44,10 +45,10 @@
 #' data("adducts")
 #'
 #' chem_formula_2_adducts(chem.forms = "C6H12O6",
-#'                        adduct.names = c("M+H", "M+Na"),
+#'                        adduct.names = c("M+H", "M+Na", "M+2H"),
 #'                        adducts = adducts,
 #'                        isotopes = isotopes,
-#'                        threshold = 1)
+#'                        threshold = 5)
 
 chem_formula_2_adducts <- function(chem.forms,
                                    isotopes,
@@ -127,6 +128,7 @@ chem_formula_2_adducts <- function(chem.forms,
 #'   \item chemical.form.adduct: chemical formula of adduct
 #'   \item chemical.form: original chemical formula
 #'   \item adduct.name: adduct used
+#'   \item charge: charge of adduct
 #'   \item chemical.form.isotope: chemical formula of isotope of adduct
 #'   \item m.z: theoretical mz value of isotope
 #'   \item abundance: theoretical abundance of isotope peak. Most abundant
@@ -164,7 +166,7 @@ get_info_adduct <- function(chem.forms,
                                        formula2 = info.adduct$Formula_add)
     }
     if (!is.na(info.adduct$Formula_ded)) {
-        chem.forms.adducts = mergeform(formula1 = chem.forms.adducts,
+        chem.forms.adducts = subform(formula1 = chem.forms.adducts,
                                        formula2 = info.adduct$Formula_ded)
     }
 
@@ -176,6 +178,7 @@ get_info_adduct <- function(chem.forms,
     info = data.frame(chemical.form = chem.forms,
                       chemical.form.adduct = chem.forms.adducts.sorted,
                       adduct.name = rep(adduct.name, length(chem.forms)),
+                      charge = info.adduct$Charge,
                       stringsAsFactors = FALSE)
 
     ## isotopes
@@ -185,6 +188,9 @@ get_info_adduct <- function(chem.forms,
                                       threshold = threshold)
     info.final = merge(info, info.isotopes,
                        all.y = TRUE)
+
+    ## modify m.z depending on charge
+    info.final$m.z = info.final$m.z / abs(info.final$charge)
 
     ## define ids
     info.final$id = paste(info.final$chemical.form,
@@ -221,6 +227,7 @@ get_info_adduct <- function(chem.forms,
 #'   \item chemical.form.adduct: chemical formula of adduct
 #'   \item chemical.form: original chemical formula
 #'   \item adduct.name: adduct used
+#'   \item charge: charge of adduct
 #'   \item chemical.form.isotope: chemical formula of isotope of adduct
 #'   \item m.z: theoretical mz value of isotope
 #'   \item abundance: theoretical abundance of isotope peak. Most abundant

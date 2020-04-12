@@ -24,6 +24,7 @@ data frame with the following information about each feature:
   \item chemical.form.adduct: chemical formula of adduct
   \item chemical.form: original chemical formula
   \item adduct.name: adduct used
+  \item charge: charge of adduct
   \item chemical.form.isotope: chemical formula of isotope of adduct
   \item m.z: theoretical mz value of isotope
   \item abundance: theoretical abundance of isotope peak. Most abundant

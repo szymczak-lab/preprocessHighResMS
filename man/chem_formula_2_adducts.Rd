@@ -39,6 +39,7 @@ data frame with the following information about each feature:
   \item chemical.form.adduct: chemical formula of adduct
   \item chemical.form: original chemical formula
   \item adduct.name: adduct used
+  \item charge: charge of adduct
   \item chemical.form.isotope: chemical formula of isotope of adduct
   \item m.z: theoretical mz value of isotope
   \item abundance: theoretical abundance of isotope peak. Most abundant
@@ -57,8 +58,8 @@ data("isotopes")
 data("adducts")
 
 chem_formula_2_adducts(chem.forms = "C6H12O6",
-                       adduct.names = c("M+H", "M+Na"),
+                       adduct.names = c("M+H", "M+Na", "M+2H"),
                        adducts = adducts,
                        isotopes = isotopes,
-                       threshold = 1)
+                       threshold = 5)
 }

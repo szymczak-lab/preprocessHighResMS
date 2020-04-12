@@ -9,16 +9,19 @@ Description: Implementation of preprocessing methods for mass spectrometry data
    spectra in profile mode and stored in the mzML format and the output is 
    SummarizedExperiment object containing intensity values for predefined 
    metabolites. The package provides functions to define features based on 
-   chemical formulas and adducts, to extract the corresponding feature intensities,
-   to filter features based on peak detection characteristics and to assign 
-   features to the most probable metabolite. Many of the functions use methods 
-   implemented in different CRAN and Bioconductor packages.
+   chemical formulas and adducts, to extract the corresponding feature 
+   intensities, to filter features based on peak detection characteristics and 
+   to assign features to the most probable metabolite. Many of the functions 
+   use methods implemented in different CRAN and Bioconductor packages.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: 
     enviPat,
     FTICRMS,
+    plyr,
     stats,
+    SummarizedExperiment,
+    utils,
     xcms
 RoxygenNote: 6.1.1
