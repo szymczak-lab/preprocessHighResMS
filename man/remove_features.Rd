@@ -30,3 +30,9 @@ Remove features with no variability (method = "constant"), missing values
 (method = "missing"), low intensity (method = "zero") or identical peaks
 (method = "identical.peaks").
 }
+\examples{
+data("se.example")
+se.example = remove_features(se = se.example,
+                             assay = "mz",
+                             method = "identical.peaks")
+}

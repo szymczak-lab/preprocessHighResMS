@@ -47,7 +47,20 @@ if res.dir = NULL, data frame with information for each feature:
 For each of the given features local maxima will be identified in a region
 of 2ppm around the theoretical mz value using the algorithm implemented in
 the function \code{\link[FTICRMS]{locate.peaks}}. The intensity value at the
-maximum closest to the theoretical mz value and within 1ppm will be extracted.
+local maximum with maximal intenstity within 1ppm will be extracted.
 If no peak could be detected, the intensity at the closest measured mz value
 is used.
+}
+\examples{
+data("info.features")
+res.dir = tempdir()
+mzml.file = system.file("extdata",
+                        "20121015b__002__07__ME.mzML",
+                        package = "preprocessHighResMS")
+
+extract_feature_intensity(spectrum.file = mzml.file,
+                          scanrange = c(1, 2),
+                          info.features = info.features,
+                          ppm = 20,
+                          res.dir = res.dir)
 }

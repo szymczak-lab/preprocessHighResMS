@@ -1,4 +1,5 @@
 
+
 #' Combine feature intensities of several spectra
 #'
 #' Load extracted information about features such as intensities, peak
@@ -23,13 +24,33 @@
 #'
 #' @importFrom SummarizedExperiment SummarizedExperiment
 #' @export
+#'
+#' @examples
+#' data("info.features")
+#' res.dir = tempdir()
+#' mzml.files = dir(system.file("extdata",
+#'                              package = "preprocessHighResMS"),
+#'                  full.names = TRUE)
+#'
+#' sapply(mzml.files,
+#'        extract_feature_intensity,
+#'        scanrange = c(1, 2),
+#'        info.features = info.features,
+#'        ppm = 20,
+#'        res.dir = res.dir)
+#'
+#' feature.files = dir(path = res.dir,
+#'                     pattern = ".rds",
+#'                     full.names = TRUE)
+#' se.example = combine_feature_intensities(feature.files = feature.files,
+#'                                          verbose = TRUE)
+
 
 combine_feature_intensities <- function(feature.files,
                                         id.samples = NULL,
                                         pheno = NULL,
                                         cor.cutoff = 0.9,
                                         verbose = FALSE) {
-
     if (is.null(id.samples)) {
         ## use basename of files as ids
         id.samples = gsub(".rds", "", basename(feature.files))
@@ -63,75 +84,56 @@ combine_feature_intensities <- function(feature.files,
             }
         }
     }
+    names(id.samples) = NULL
     colnames(int) = colnames(peak.detection) = colnames(mz) = id.samples
 
     int.log2 = log2(int + 1)
 
-    se = SummarizedExperiment(assays = list(intensity = int,
-                                            intensity.log2 = int.log2,
-                                            peak.detection = peak.detection,
-                                            mz = mz),
-                              colData = pheno[id.samples, , drop = FALSE])
+    se = SummarizedExperiment(
+        assays = list(
+            intensity = int,
+            intensity.log2 = int.log2,
+            peak.detection = peak.detection,
+            mz = mz
+        ),
+        colData = pheno[id.samples, , drop = FALSE]
+    )
     if (verbose) {
         print(paste(nrow(se), "features identified across samples"))
     }
 
     ## remove features with missing mz values and intensities for all samples
     ## and features with constant intensity across all samples
-    se = remove_features(se = se,
-                         assay = "mz",
-                         method = "missing",
-                         freq = 1)
-    se = remove_features(se = se,
-                         assay = "intensity",
-                         method = "missing",
-                         freq = 1)
+    se = remove_features(
+        se = se,
+        assay = "mz",
+        method = "missing",
+        freq = 1
+    )
+    se = remove_features(
+        se = se,
+        assay = "intensity",
+        method = "missing",
+        freq = 1
+    )
     if (verbose) {
-        print(paste(nrow(se), "features after filtering based on missingness"))
+        print(paste(
+            nrow(se),
+            "features after filtering based on missingness"
+        ))
     }
-    se = remove_features(se = se,
-                         assay = "intensity",
-                         method = "constant",
-                         freq = 1)
+    se = remove_features(
+        se = se,
+        assay = "intensity",
+        method = "constant",
+        freq = 1
+    )
     if (verbose) {
-        print(paste(nrow(se), "features after filtering based on constant intensities"))
+        print(paste(
+            nrow(se),
+            "features after filtering based on constant intensities"
+        ))
     }
 
     return(se)
 }
-
-# library(SummarizedExperiment)
-# library(enviPat)
-# library(FTICRMS)
-# data(isotopes)
-# data(adducts)
-#
-# spectrum.files = c("/home/silke/data/projects/metabolomics_preprocessing/subprojects/01_new_pipeline/data/MTBLS162/spectrum/20121015b__002__01__ME.mzML",
-#                    "/home/silke/data/projects/metabolomics_preprocessing/subprojects/01_new_pipeline/data/MTBLS162/spectrum/20121015b__002__03__ME.mzML")
-# standards.file = "/home/silke/data/projects/metabolomics_preprocessing/data_input/metabolights/MTBLS162/internal_standards.txt"
-# res.dir = tempdir()
-#
-# info.standards = read.table(file = standards.file,
-#                             header = TRUE, as.is = TRUE, sep = ";")
-# info.standards$chem.form = correct_chem_formula(chem.forms = info.standards$chem.form,
-#                                                 isotopes = isotopes)
-#
-# info.features = chem_formula_2_adducts(chem.forms = info.standards$chem.form,
-#                                        isotopes = isotopes,
-#                                        adducts = adducts,
-#                                        verbose = TRUE,
-#                                        adduct.names = c("M+H"),
-#                                        rel_to = 0,
-#                                        threshold = 20)
-#
-# sapply(spectrum.files, extract_feature_intensity,
-#        scanrange = c(20, 70),
-#        info.features = info.features,
-#        ppm = 20,
-#        res.dir = res.dir)
-#
-# feature.files = dir(res.dir,
-#                     pattern = ".rds",
-#                     full.names = TRUE)
-#
-# se = combine_feature_intensities(feature.files = feature.files)

@@ -1,10 +1,11 @@
 
+
 #' Extract intensities of specific features from a single spectrum
 #'
 #' For each of the given features local maxima will be identified in a region
 #' of 2ppm around the theoretical mz value using the algorithm implemented in
 #' the function \code{\link[FTICRMS]{locate.peaks}}. The intensity value at the
-#' maximum closest to the theoretical mz value and within 1ppm will be extracted.
+#' local maximum with maximal intenstity within 1ppm will be extracted.
 #' If no peak could be detected, the intensity at the closest measured mz value
 #' is used.
 #'
@@ -37,6 +38,19 @@
 #'
 #' @import FTICRMS
 #' @export
+#'
+#' @examples
+#' data("info.features")
+#' res.dir = tempdir()
+#' mzml.file = system.file("extdata",
+#'                         "20121015b__002__07__ME.mzML",
+#'                         package = "preprocessHighResMS")
+#'
+#' extract_feature_intensity(spectrum.file = mzml.file,
+#'                           scanrange = c(1, 2),
+#'                           info.features = info.features,
+#'                           ppm = 20,
+#'                           res.dir = res.dir)
 
 extract_feature_intensity <- function(spectrum.file,
                                       scanrange = c(1, 1),
@@ -46,9 +60,6 @@ extract_feature_intensity <- function(spectrum.file,
                                       oneside.min = 1,
                                       verbose = TRUE,
                                       res.dir = NULL) {
-    # require(FTICRMS)
-    # require(enviPat)
-    # data(adducts)
 
     ## extract isotope info
     info.iso = unique(info.features[, c("chemical.form.isotope", "m.z")])
@@ -77,23 +88,24 @@ extract_feature_intensity <- function(spectrum.file,
     ## extract feature intensities
     range.mz = range(spectrum$mz)
     info.iso = info.iso[which(info.iso$m.z.2ppm.lower >= range.mz[1] &
-                                  info.iso$m.z.2ppm.upper <= range.mz[2]), ]
+                                  info.iso$m.z.2ppm.upper <= range.mz[2]),]
 
     if (verbose) {
         print(paste(nrow(info.iso), "isotopes covered by spectrum"))
     }
 
-    intensity = center = width = peak.detected = rep(NA, length = nrow(info.iso))
+    intensity = center = width = peak.detected =
+        rep(NA, length = nrow(info.iso))
 
-    for (i in 1:nrow(info.iso)) {
-        if (i %% 500 == 0) print(i)
-        x = info.iso[i, ]
+    for (i in seq_len(nrow(info.iso))) {
+        if (i %% 500 == 0)
+            print(i)
+        x = info.iso[i,]
         ind = which(spectrum$mz >= x$m.z.2ppm.lower &
                         spectrum$mz <= x$m.z.2ppm.upper)
 
         if (length(ind) > 0) {
-
-            temp = spectrum[ind, ]
+            temp = spectrum[ind,]
             ## note: needed since locate.peaks() function in FTICRMS package
             ## does not check if at least num.pts mz values are available
             ## no peak information is stored if not enough rows are available
@@ -101,33 +113,39 @@ extract_feature_intensity <- function(spectrum.file,
                 #                print("in first if")
 
                 ## peak detection using local maxima
-                res.p = locate.peaks(peak.base = temp,
-                                     num.pts = num.pts,
-                                     oneside.min = oneside.min,
-                                     peak.method = "locmaxes",
-                                     thresh = -Inf)
+                res.p = locate.peaks(
+                    peak.base = temp,
+                    num.pts = num.pts,
+                    oneside.min = oneside.min,
+                    peak.method = "locmaxes",
+                    thresh = -Inf
+                )
 
                 ## restrict to peaks within ppm
                 res.p = res.p[which(res.p$Center_hat >= x$m.z.lower &
-                                        res.p$Center_hat <= x$m.z.upper), ]
+                                        res.p$Center_hat <= x$m.z.upper),]
 
                 if (nrow(res.p) > 0) {
-                    peak.detected[i] = 1
-
                     ## more than 1 peak detected
-                    ## select peak closest to feature
+                    ## select maximal peak
                     if (nrow(res.p) > 1) {
-                        #                    print(paste("more than 1 peak:", i))
-                        diff = abs(res.p$Center_hat - x$m.z)
-                        ind.min = which.min(diff)
-                        res.p = res.p[ind.min, , drop = FALSE]
+                        ord = order(res.p$Max_hat,
+                                    decreasing = TRUE)
+                        ratio = res.p$Max_hat[ord[2]] / res.p$Max_hat[ord[1]]
+                        if (ratio < 0.5) {
+                            peak.detected[i] = 1
+                        } else {
+                            peak.detected[i] = 0
+                        }
+                        res.p = res.p[ord[1], , drop = FALSE]
+                    } else {
+                        peak.detected[i] = 1
                     }
 
                     intensity[i] = res.p$Max_hat
                     center[i] = res.p$Center_hat
                     width[i] = res.p$Width_hat
                 }
-
             }
         }
 
@@ -146,20 +164,26 @@ extract_feature_intensity <- function(spectrum.file,
         }
     }
 
-    res.features.all = data.frame(id = info.iso$chemical.form.isotope,
-                                  mz.th = info.iso$m.z,
-                                  intensity,
-                                  mz.meas = center,
-                                  peak.detected,
-                                  stringsAsFactors = FALSE)
+    res.features.all = data.frame(
+        id = info.iso$chemical.form.isotope,
+        mz.th = info.iso$m.z,
+        intensity,
+        mz.meas = center,
+        peak.detected,
+        stringsAsFactors = FALSE
+    )
     rownames(res.features.all) = res.features.all$id
     #    res.features = na.omit(res.features.all)
-    if (verbose) print(paste(sum(!is.na(res.features.all$intensity)),
-                             "features detected"))
+    if (verbose)
+        print(paste(sum(!is.na(
+            res.features.all$intensity
+        )),
+        "features detected"))
 
     if (!is.null(res.dir)) {
         feature.file = file.path(res.dir,
-                                 gsub(".mzML", ".rds", basename(spectrum.file)))
+                                 gsub(".mzML", ".rds",
+                                      basename(spectrum.file)))
         saveRDS(res.features.all,
                 file = feature.file)
 
@@ -167,35 +191,6 @@ extract_feature_intensity <- function(spectrum.file,
         return(res.features.all)
     }
 }
-
-
-# library(enviPat)
-# library(FTICRMS)
-# data(isotopes)
-# data(adducts)
-#
-# spectrum.file = "/home/silke/data/projects/metabolomics_preprocessing/subprojects/01_new_pipeline/data/MTBLS162/spectrum/20121015b__002__01__ME.mzML"
-# standards.file = "/home/silke/data/projects/metabolomics_preprocessing/data_input/metabolights/MTBLS162/internal_standards.txt"
-#
-# info.standards = read.table(file = standards.file,
-#                             header = TRUE, as.is = TRUE, sep = ";")
-# info.standards$chem.form = correct_chem_formula(chem.forms = info.standards$chem.form,
-#                                                 isotopes = isotopes)
-#
-# info.features = chem_formula_2_adducts(chem.forms = info.standards$chem.form,
-#                                        isotopes = isotopes,
-#                                        adducts = adducts,
-#                                        verbose = TRUE,
-#                                        adduct.names = c("M+H"),
-#                                        rel_to = 0,
-#                                        threshold = 20)
-#
-# res = extract_feature_intensity(spectrum.file = spectrum.file,
-#                                 scanrange = c(20, 70),
-#                                 info.features = info.features,
-#                                 ppm = 20)
-
-
 
 #' Load spectrum
 #'
@@ -217,7 +212,6 @@ extract_feature_intensity <- function(spectrum.file,
 
 load_spectrum <- function(spectrum.file,
                           scanrange = c(1, 1)) {
-
     if (!file.exists(spectrum.file)) {
         stop(paste("file", spectrum.file, "does not exist!"))
     }
@@ -234,21 +228,3 @@ load_spectrum <- function(spectrum.file,
     return(data.frame(spectrum))
 
 }
-
-
-# library(xcms)
-# library(msdata)
-# library(MSnbase)
-#
-# # convert FT-ICR example file in msdata package to mzML format
-# mzdata.file <- list.files(system.file("fticr", package = "msdata"),
-#                           recursive = TRUE,
-#                           full.names = TRUE)[1]
-# temp = readMSData(files = mzdata.file,
-#                   msLevel. = 1)
-# mzml.file = tempfile(fileext = ".mzML")
-# writeMSData(temp,
-#             file = mzml.file)
-#
-# # load spectrum
-# s = load_spectrum(spectrum.file = mzml.file)

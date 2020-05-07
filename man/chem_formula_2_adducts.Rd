@@ -28,8 +28,8 @@ adduct.names is set to c("M-H", "M+Cl").}
 \item{rel_to}{Integer (0, 1, 2, 3 or 4). Probability definition
 (see \code{\link[enviPat]{isopattern}}).}
 
-\item{threshold}{Numeric (1-100). Probability below which isotope peaks can be omitted
-(see \code{\link[enviPat]{isopattern}}).}
+\item{threshold}{Numeric (1-100). Probability below which isotope peaks can
+be omitted (see \code{\link[enviPat]{isopattern}}).}
 
 \item{verbose}{Logical. Print out additional information.}
 }

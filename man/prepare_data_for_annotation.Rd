@@ -11,12 +11,20 @@ prepare_data_for_annotation(se)
 object}
 }
 \value{
-data.frame with information about measured features with columns
-id (= unique identifier), mz (= measured mz value), intensity (= measured
-intensity), no.peak.detected (= number of detected peaks).
+data.frame with the following information about measured features:
+\itemize{
+\item id: unique identifier
+\item mz: measured mz value
+\item intensity: measured intensity
+\item no.peak.detected: number of detected peaks.
+}
 }
 \description{
-Extract information for annotation from SummarizedExperiment object. For each
-feature, the median mz value across all samples will be used as measured mz
-value and the sum of all intensities for the intensity value.
+Extract information for annotation from SummarizedExperiment object. For
+each feature, the median mz value across all samples will be used as
+measured mz value and the sum of all intensities for the intensity value.
+}
+\examples{
+data("se.example")
+dat = prepare_data_for_annotation(se = se.example)
 }

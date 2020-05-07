@@ -19,9 +19,12 @@ intensity).}
 keep the assignment of measured and theoretical feature (default = 0.8).}
 }
 \value{
-data.frame with the following columns for each assigned measured feature:
-f.meas = identifier of measured feature, f.theo = identifier of assigned
-theoretical feature, prob = posterior probability.
+data.frame with the following information about each assigned feature:
+\itemize{
+\item f.meas: identifier of measured feature
+\item f.theo: identifier of assigned theoretical feature
+\item prob: posterior probability
+}
 }
 \description{
 Based on estimated posterior probabilities each measured feature is assigned
@@ -30,4 +33,29 @@ the maximum probability is below the specified cutoff. In rare cases,
 several measured features are assigned to the same theoretical feature and
 the measured feature with the largest number of detected peaks or highest
 intensity will be kept.
+}
+\examples{
+data("se.example")
+data("info.features")
+
+dat = prepare_data_for_annotation(se = se.example)
+hits.m = find_hits(info.features = info.features,
+                   dat = dat,
+                   ppm = 20)
+
+prior.prob = compute_prior_prob(hits.m = hits.m,
+                                info.features = info.features,
+                                dat = dat,
+                                ppm = 20)
+add.m = generate_connectivity_matrix(info.features = info.features,
+                                     type = "adducts")
+
+set.seed(20200402)
+post.prob = compute_posterior_prob(prior.prob = prior.prob,
+                                   dat = dat,
+                                   add.m = add.m,
+                                   delta.add = 0.1)
+
+info.assigned.use = assign_features(post.prob = post.prob,
+                                    dat = dat)
 }

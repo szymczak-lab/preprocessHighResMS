@@ -19,8 +19,8 @@ get_info_adduct(chem.forms, adduct.name = "M+H", adducts, isotopes,
 \item{isotopes}{dataframe with stable isotopes (see
 \code{\link[enviPat]{isotopes}}).}
 
-\item{threshold}{Numeric (1-100). Probability below which isotope peaks can be omitted
-(see \code{\link[enviPat]{isopattern}}).}
+\item{threshold}{Numeric (1-100). Probability below which isotope peaks can
+be omitted (see \code{\link[enviPat]{isopattern}}).}
 
 \item{rel_to}{Integer (0, 1, 2, 3 or 4). Probability definition
 (see \code{\link[enviPat]{isopattern}}).}

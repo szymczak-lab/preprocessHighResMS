@@ -33,3 +33,23 @@ into a \code{\link[SummarizedExperiment]{RangedSummarizedExperiment-class}}
 object. Features are removed if they have missing mz values or intensities
 for all samples or constant intensity across all samples.
 }
+\examples{
+data("info.features")
+res.dir = tempdir()
+mzml.files = dir(system.file("extdata",
+                             package = "preprocessHighResMS"),
+                 full.names = TRUE)
+
+sapply(mzml.files,
+       extract_feature_intensity,
+       scanrange = c(1, 2),
+       info.features = info.features,
+       ppm = 20,
+       res.dir = res.dir)
+
+feature.files = dir(path = res.dir,
+                    pattern = ".rds",
+                    full.names = TRUE)
+se.example = combine_feature_intensities(feature.files = feature.files,
+                                         verbose = TRUE)
+}

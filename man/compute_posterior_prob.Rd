@@ -50,9 +50,32 @@ columns. The cell i,j contains the posterior probability that measured
 feature i belongs to theoretical feature j.
 }
 \description{
-Estimates posterior probabilities of all possible theoretical features for each
-measured feature based on prior probabilities and additional information about
-adduct and isotope connections using a Gibbs sampler. This function is based
-on code of the internal function IPA.sampler.Add.Iso.Bio in the R package
-IPA (available on github at \url{https://github.com/francescodc87/IPA}).
+Estimates posterior probabilities of all possible theoretical features for
+each measured feature based on prior probabilities and additional
+information about adduct and isotope connections using a Gibbs sampler. This
+function is based on code of the internal function IPA.sampler.Add.Iso.Bio
+in the R package IPA (available on github at
+\url{https://github.com/francescodc87/IPA}).
+}
+\examples{
+data("se.example")
+data("info.features")
+
+dat = prepare_data_for_annotation(se = se.example)
+hits.m = find_hits(info.features = info.features,
+                   dat = dat,
+                   ppm = 20)
+
+prior.prob = compute_prior_prob(hits.m = hits.m,
+                                info.features = info.features,
+                                dat = dat,
+                                ppm = 20)
+add.m = generate_connectivity_matrix(info.features = info.features,
+                                     type = "adducts")
+
+set.seed(20200402)
+post.prob = compute_posterior_prob(prior.prob = prior.prob,
+                                   dat = dat,
+                                   add.m = add.m,
+                                   delta.add = 0.1)
 }

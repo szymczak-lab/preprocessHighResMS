@@ -23,9 +23,18 @@ columns (1 = measured feature within ppm distance to theoretical feature,
 0 = otherwise).
 }
 \description{
-Identifies all possible theoretical features within an user defined ppm window
-around the measured mz value of each measured feature. The result includes
-only those theoretical features that are potential candidates for at least
-one measured feature and orphan isotopes are removed if no hit is identified
-for the corresponding monoisotope.
+Identifies all possible theoretical features within an user defined ppm
+window around the measured mz value of each measured feature. The result
+includes only those theoretical features that are potential candidates for
+at least one measured feature and orphan isotopes are removed if no hit is
+identified for the corresponding monoisotope.
+}
+\examples{
+data("se.example")
+data("info.features")
+
+dat = prepare_data_for_annotation(se = se.example)
+hits.m = find_hits(info.features = info.features,
+                   dat = dat,
+                   ppm = 20)
 }

@@ -38,3 +38,17 @@ belongs to theoretical feature j.
 Estimates prior probabilities of all possible theoretical features for each
 measured feature.
 }
+\examples{
+data("se.example")
+data("info.features")
+
+dat = prepare_data_for_annotation(se = se.example)
+hits.m = find_hits(info.features = info.features,
+                   dat = dat,
+                   ppm = 20)
+
+prior.prob = compute_prior_prob(hits.m = hits.m,
+                                info.features = info.features,
+                                dat = dat,
+                                ppm = 20)
+}

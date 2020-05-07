@@ -5,7 +5,7 @@
 \title{Generate connectivity matrices}
 \usage{
 generate_connectivity_matrix(info.features, type, ids.use = NULL,
-  ratios = TRUE)
+  ratios = FALSE)
 }
 \arguments{
 \item{info.features}{data.frame with information about theoretical possible
@@ -25,11 +25,21 @@ expected abundance ratios? (deafult = TRUE).}
 \value{
 matrix with theoretical possible features in rows and columns.
 In the adduct matrix, the cell i,j contains 1, if features i and j are
-monoisotopic isotopes and adducts of the same chemical formula and 0 otherwise.
+monoisotopic isotopes and adducts of the same chemical formula and 0
+otherwise.
 In the isotope matrix, the cell i,j contains 1, if features i and j are
 isotopes of the same adduct (or the ratio of the theoretical abundances if
 ratios = TRUE) and 0 otherwise.
 }
 \description{
 Generates matrices summarizing connections between adducts and isotopes.
+}
+\examples{
+data("info.features")
+
+add.m = generate_connectivity_matrix(info.features = info.features,
+                                     type = "adducts")
+
+iso.m = generate_connectivity_matrix(info.features = info.features,
+                                     type = "isotopes")
 }

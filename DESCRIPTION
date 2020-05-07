@@ -1,7 +1,7 @@
 Package: preprocessHighResMS
 Type: Package
 Title: Preprocessing of spectra data from high resolution mass spectrometry
-Version: 0.99.0
+Version: 0.99.1
 Authors@R: person("Silke", "Szymczak", email = "szymczak@medinfo.uni-kiel.de",
                   role = c("aut", "cre"))
 Description: Implementation of preprocessing methods for mass spectrometry data 
@@ -13,6 +13,8 @@ Description: Implementation of preprocessing methods for mass spectrometry data
    intensities, to filter features based on peak detection characteristics and 
    to assign features to the most probable metabolite. Many of the functions 
    use methods implemented in different CRAN and Bioconductor packages.
+biocViews: Software, Cheminformatics, Lipidomics, Metabolomics, 
+   MassSpectrometry, Annotation, Preprocessing
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -25,3 +27,5 @@ Imports:
     utils,
     xcms
 RoxygenNote: 6.1.1
+Depends: 
+    R (>= 3.5)

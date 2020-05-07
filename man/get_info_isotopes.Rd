@@ -15,8 +15,8 @@ get_info_isotopes(chem.forms, isotopes, rel_to = 0, threshold = 20)
 \item{rel_to}{Integer (0, 1, 2, 3 or 4). Probability definition
 (see \code{\link[enviPat]{isopattern}}).}
 
-\item{threshold}{Numeric (1-100). Probability below which isotope peaks can be omitted
-(see \code{\link[enviPat]{isopattern}}).}
+\item{threshold}{Numeric (1-100). Probability below which isotope peaks can
+be omitted (see \code{\link[enviPat]{isopattern}}).}
 }
 \value{
 data frame with the following information about each feature:
