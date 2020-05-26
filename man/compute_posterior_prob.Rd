@@ -4,9 +4,19 @@
 \alias{compute_posterior_prob}
 \title{Compute posterior probabilities for putative theoretical features}
 \usage{
-compute_posterior_prob(prior.prob, dat, add.m = NULL, iso.m = NULL,
-  bio.m = NULL, delta.add = 0.5, delta.iso = 0.5, delta.bio = 1,
-  ratio.tol = 0.8, no.its = 1100, burn = 100)
+compute_posterior_prob(
+  prior.prob,
+  dat,
+  add.m = NULL,
+  iso.m = NULL,
+  bio.m = NULL,
+  delta.add = 0.5,
+  delta.iso = 0.5,
+  delta.bio = 1,
+  ratio.tol = 0.8,
+  no.its = 1100,
+  burn = 100
+)
 }
 \arguments{
 \item{prior.prob}{matrix with prior probabilities for each measured feature

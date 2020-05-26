@@ -4,8 +4,12 @@
 \alias{generate_connectivity_matrix}
 \title{Generate connectivity matrices}
 \usage{
-generate_connectivity_matrix(info.features, type, ids.use = NULL,
-  ratios = FALSE)
+generate_connectivity_matrix(
+  info.features,
+  type,
+  ids.use = NULL,
+  ratios = FALSE
+)
 }
 \arguments{
 \item{info.features}{data.frame with information about theoretical possible

@@ -4,8 +4,15 @@
 \alias{compute_prior_prob}
 \title{Compute prior probabilities for putative theoretical features}
 \usage{
-compute_prior_prob(hits.m, info.features, dat, pk = NULL, ppm,
-  ppm.unknown = NULL, pr.limit = 1e-05)
+compute_prior_prob(
+  hits.m,
+  info.features,
+  dat,
+  pk = NULL,
+  ppm,
+  ppm.unknown = NULL,
+  pr.limit = 1e-05
+)
 }
 \arguments{
 \item{hits.m}{matrix with information about overlapping theoretical features

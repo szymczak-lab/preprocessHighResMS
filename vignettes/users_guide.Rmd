@@ -1,0 +1,471 @@
+---
+title: "The preprocessHighResMS User's Guide"
+author: Silke Szymczak
+package: preprocessHighResMS
+abstract: >
+  A comprehensive guide to using the preprocessHighresMS package for 
+  preprocessing metabolomics data from direct infusion high resolution mass 
+  spectrometry.
+vignette: >
+  %\VignetteIndexEntry{preprocessHighResMS User's Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output: 
+  BiocStyle::html_document:
+    toc_float: true
+---
+
+# Introduction
+
+The preprocessHighResMS package provides methods to preprocess metabolomics 
+data that are generated without a chromatography step (i.e. by direct infusion)
+on high resolution mass spectrometers such as Orbitrap or Fourier-transform ion
+cyclotron resonance mass spectrometry (FT-ICR-MS).
+
+The package provides functions to define features based on chemical formulas 
+and possible adducts, to extract the corresponding feature intensities from the
+spectra, to filter features based on peak detection characteristics and to 
+assign features to the most probable metabolite. Many of the functions 
+use methods already implemented in different CRAN and Bioconductor packages.
+
+The input are mass spectra in profile mode and stored in the mzML format. The 
+tool msConvert from ProteoWizard 
+(<http://proteowizard.sourceforge.net/tools.shtml>) can be used to convert 
+the vendor specific files (e.g. .raw or .d) to the open, XML based data 
+format mzML which is a community standard for mass spectrometry data. 
+
+The package stores the feature and metabolite level information as a 
+`r Biocpkg("SummarizedExperiment")` object which is a standard data structure 
+for omics data sets provided by Bioconductor.
+
+<!-- ## Citation -->
+
+## Dependencies
+
+This document has the following dependencies:
+
+```{r dependencies, warning=FALSE, message=FALSE}
+library(devtools)
+library(preprocessHighResMS)
+library(enviPat)
+library(SummarizedExperiment)
+library(ggpubr)
+```
+
+For the following analyses a data directory needs to be defined.
+
+```{r}
+data.dir = file.path(tempdir(), "example")
+dir.create(data.dir)
+
+```
+
+## Example data
+
+This vignette demonstrates the use of the package using example data from the
+study MTBLS162 available in the MetaboLights database 
+(<https://www.ebi.ac.uk/metabolights/MTBLS162/descriptors>). In this lipidomics 
+study plasma samples from patients with severe insulin resistance caused by 
+either loss-of-function mutations in the insulin receptor gene (INSR) or 
+congenital generalised or partial lipodystrophy (LD) were compared with healthy 
+controls. In addition, several blank and pooled quality control (QC) samples 
+were included. 
+
+Information about each sample is downloaded from the MetaboLights website and 
+the relevant columns for the analysis are extracted.
+
+```{r}
+## define destination of phenotype file
+pheno.file = file.path(data.dir, "info_pheno.txt")
+
+## download file from MetaboLights
+download.file(url = file.path("https://www.ebi.ac.uk/metabolights/ws/studies",
+                              "MTBLS162/download",
+                              "jFl7bH6WBo?file=s_Lypodystrophy.txt"),
+              destfile = pheno.file)
+
+## load phenotype information
+pheno.all = read.table(file = pheno.file,
+                       header = TRUE, as.is = TRUE, 
+                       na.strings = c("N/A", "NCIT:Missing"))
+pheno = pheno.all[, c("Sample.Name", 
+                      "Source.Name", 
+                      "Factor.Value.Disease.State.")]
+colnames(pheno) = c("id", "source", "disease")
+rownames(pheno) = pheno$id
+head(pheno)
+
+```
+
+Lipids were measured with a nanoelectrospray method interfaced to 
+the Thermo Exactive Orbitrap from Thermo Scientific.
+The .raw files have been converted to mzML files using the msConvert tool with 
+the following command:
+
+```{bash, eval=FALSE}
+msconvert.exe *.raw -o <output.dir> -e .mzML --mzML
+
+```
+
+The mzML files are available at BioStudies 
+(https://www.ebi.ac.uk/biostudies/studies/S-BSST400)
+and are downloaded into a subdirectory of `data.dir` called `spectrum`. Note 
+that for one sample the mzML file could not be generated.
+
+```{r}
+spectrum.dir = file.path(data.dir, "spectrum")
+dir.create(spectrum.dir)
+
+## remove sample without mzML file
+pheno = subset(pheno, id != "20121015b__002__12__ME")
+
+## download
+for (s in pheno$id) {
+    download.file(url = file.path(
+        "https://www.ebi.ac.uk/biostudies/files/S-BSST400",
+        paste0(s, ".mzML")),
+        destfile = file.path(spectrum.dir,
+                             paste0(s, ".mzML")),
+        quiet = TRUE)
+}
+
+```
+
+# Defining features
+
+Due to the high resolution of the used mass spectrometer a peak should be 
+caused by a single feature, i.e. a specific isotope of an adduct of one of the 
+metabolites that is contained in the sample. Thus, instead of starting with 
+peak detection and assigning possible metabolites later in the annotation step,
+this package starts with the metabolites that should theoretically be 
+measurable in the samples. Here in this example several internal standards will
+be used as well as some metabolites that show intensity differerences between 
+controls and LD or INSR.
+
+```{r}
+## chemical formulas of standards
+chem.forms.standards = c("C44H92NO6P",
+                         "C45H94NO6P",
+                         "C40H81N2O6P",
+                         "C11H22O2",
+                         "C39H74O6",
+                         "C26H51NO3")
+
+## chemical formulas of interesting metabolites
+chem.forms.lipids = c("C41H81N2O6P",
+                      "C41H83N2O6P",
+                      "C44H80NO8P",
+                      "C45H76O2",
+                      "C55H100O6",
+                      "C55H102O6")
+
+```
+
+The function `chem_formula_2_adducts()` can be used to calculate possible 
+features. These features include different isotopes of specified adducts of the
+chemical formulas. Here the adducts "M+H" and "M+NH4" are used and isotopes with
+probabilities > 50% relative to the most intense isotope are included.
+Before using this function it might be necessary to convert the chemical 
+formulas which can be performed using the function `correct_chem_formula()`.
+
+```{r}
+## load isotope information
+data("isotopes")
+
+## correct chemical formulas
+chem.forms.standards = correct_chem_formula(chem.forms = chem.forms.standards,
+                                            isotopes = isotopes)
+
+## slight modifications (e.g. P1 instead of P)
+chem.forms.standards
+
+chem.forms.lipids = correct_chem_formula(chem.forms = chem.forms.lipids,
+                                            isotopes = isotopes)
+
+chem.forms = c(chem.forms.standards,
+               chem.forms.lipids)
+
+
+## load adduct information
+data("adducts")
+
+## get possible features (M + adduct and different isotopes)
+info.features = chem_formula_2_adducts(chem.forms = chem.forms,
+                                       adduct.names = c("M+H", "M+NH4"),
+                                       adducts = adducts,
+                                       isotopes = isotopes,
+                                       threshold = 50)
+head(info.features)
+nrow(info.features)
+```
+
+From the `r length(chem.forms)` chemical formulas `r nrow(info.features)` 
+possible features have been calculated.
+
+# Extract feature information
+
+For each spectrum file intensities are extracted for each theoretical
+feature using the function `extract_feature_intensity()`. The files with sample
+specific feature information are stored in a subdirectory of `data.dir` called 
+`features`.
+
+```{r}
+## create directory
+feature.dir = file.path(data.dir, "features")
+dir.create(feature.dir)
+
+spectrum.files = dir(path = spectrum.dir,
+                     full.names = TRUE)
+for (f in spectrum.files) {
+    extract_feature_intensity(spectrum.file = f,
+                              scanrange = c(40, 50),
+                              info.features = info.features,
+                              ppm = 20,
+                              res.dir = feature.dir,
+                              verbose = FALSE)
+}
+
+
+```
+
+A SummarizedExperiment object is created by combining the feature information
+across samples. More information about this type of object is available at https://bioconductor.org/packages/release/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html.
+Some of the features are removed if any of the following characteristics is 
+fullfilled:
+
+- missing mz values or intensities for all samples
+
+- constant intensity across all samples 
+
+```{r}
+feature.files = dir(feature.dir,
+                    full.names = TRUE)
+
+se.all = combine_feature_intensities(feature.files = feature.files,
+                                     pheno = pheno,
+                                     verbose = TRUE)
+```
+
+In this example, none of the features is removed.
+
+The SummarizedExperiment object contains information about the samples in the
+`colData` slot. It would be possible to store information about the features in 
+the `rowData` slot. The `assays` slot holds a list with several matrices with 
+the features in the rows and the samples in the columns. In addition to the 
+intensities (original and log-transformed), information about the detected peak
+and the selected mz value are stored. 
+
+```{r}
+print(se.all)
+```
+
+# Filtering
+
+While the previous filtering step is relevant for all studies, the following
+criteria and thresholds need to be defined specifically for each study.
+
+In the first step the relative frequency of detected peaks per sample is 
+plotted and one sample is removed since it has an extremely low frequency of 
+peaks.
+
+```{r}
+## frequency of peaks per sample
+freq.peaks.sample = apply(assays(se.all)$peak.detection, 2, sum, na.rm = TRUE) /
+    nrow(se.all)
+
+dat.plot =  data.frame(freq.peaks.sample, 
+                       source = se.all$source)
+ggboxplot(dat.plot,
+          x = "source",
+          y = "freq.peaks.sample",
+          add = "dotplot")
+
+## remove sample with extremely low number of peaks
+ind.rm = which(freq.peaks.sample < 0.1)
+se.all = se.all[, -ind.rm]
+
+```
+
+Using the additional samples available in the study, features are kept if they
+are detected in all of the QC samples but only in some of the blank 
+samples.
+
+After this QC step, the QC and blank samples are removed.
+
+Furthermore, features with at least one missing value are removed. In contrast 
+to the standard preprocessing approach, here missing values for a specific 
+combination of feature and sample occur only if no or less than five intensities
+were measured around the theoretical mz value of the feature in that sample.
+
+Finally, features are removed if they have identical mz values for more than 
+25% of the samples (same peak).
+
+```{r}
+## features detected in at least 50% of the quality control samples
+ind.qc = which(se.all$source == "pooled quality control")
+se.qc = se.all[, ind.qc]
+
+peaks.feat.qc = apply(assays(se.qc)$peak.detection, 1, sum, na.rm = TRUE)
+feat.detected.qc = names(peaks.feat.qc)[which(peaks.feat.qc == ncol(se.qc))]
+
+## features detected in all blank samples
+ind.blank = which(se.all$source == "blank sample")
+se.blank = se.all[, ind.blank]
+
+peaks.feat.blank = apply(assays(se.blank)$peak.detection, 1, sum, na.rm = TRUE)
+feat.detected.blank = names(peaks.feat.blank)[which(peaks.feat.blank == 
+                                                        ncol(se.blank))]
+
+feat.use = setdiff(feat.detected.qc, feat.detected.blank)
+
+## final data set
+se = se.all[feat.use, -c(ind.qc, ind.blank)]
+
+## check missing values in int
+int = assays(se)$intensity
+sum.na = apply(int, 1, function(x) {sum(is.na(x))})
+
+## restrict to features without missing values
+se = se[which(sum.na == 0), ]
+
+## remove features with highly correlated or even identical mz values
+## (corresponding to the same peak)
+se = remove_features(se = se,
+                     assay = "mz",
+                     method = "identical.peaks")
+
+print(se)
+```
+
+After filtering, only `r nrow(se)` features are left.
+
+# Annotation
+
+The measured features are assigned to the theoretical features using a Bayesian
+approach that takes into account the distance between measured and theoretical
+mz values as well as known relationships between adducts and isotopes.
+
+First, all possible theoretical features within a defined window around each
+measured feature are identified using the function `find_hits()` and the prior 
+probabilities are estimated using the function `compute_prior_prob()`.
+
+```{r}
+dat = prepare_data_for_annotation(se = se)
+
+hits.m = find_hits(info.features = info.features,
+                   dat = dat,
+                   ppm = 20)
+
+prior.prob = compute_prior_prob(hits.m = hits.m,
+                                info.features = info.features,
+                                dat = dat,
+                                ppm = 20)
+max.pr = apply(prior.prob, 1, max)
+```
+
+One orphan isotope (= isotope for which the corresponding monoisotopic form was
+not measured) is removed.
+
+For illustration only a small number of features is considered in this example.
+Thus, for each of the measured features the prior probability is 1 for the 
+corresponding theoretical feature.
+In a realistic analysis usually hundreds to thousands metabolites and the 
+corresponding features are analysed so that prior probabilities can be much 
+lower.
+
+In order to incorporate additional information, connectivity matrices can be
+calculated based on the function `generate_connectivity_matrix()` that contain
+information about relationships between features e.g. based on different 
+adducts of the same chemical component or isotopes of the same adduct.
+
+Estimation of the posterior probabilities with the function 
+`compute_posterior_prob()` usually takes some time and is skipped here.
+
+```{r, eval = FALSE}
+## not run
+add.m = generate_connectivity_matrix(info.features = info.features,
+                                     ids.use = colnames(hits.m),
+                                     type = "adducts")
+iso.m = generate_connectivity_matrix(info.features = info.features,
+                                     ids.use = colnames(hits.m),
+                                     type = "isotopes",
+                                     ratios = FALSE)
+
+set.seed(20200402)
+post.prob.add.iso = compute_posterior_prob(prior.prob = prior.prob,
+                                           dat = dat,
+                                           add.m = add.m,
+                                           iso.m = iso.m,
+                                           delta.add = 0.1,
+                                           delta.iso = 0.1)
+max.po.a.i = apply(post.prob.add.iso, 1, max)
+```
+
+Based on either prior (here) or usually posterior probabilities, each measured
+feature is assigned to the most probable theoretical feature or removed if the 
+maximum probability is below a specified cutoff using the function 
+`assign_features()`.
+
+```{r}
+info.assigned.use = assign_features(post.prob = prior.prob,
+                                    dat = dat,
+                                    cutoff.prob = 0.8)
+
+
+```
+
+# Metabolite level data
+
+So far, all steps were based on the feature level. However, often several 
+features belong to the same metabolite. For downstream statistical and 
+bioinformatical analyses, the feature based metabolomics data is combined to 
+metabolite data by summing up the intensitites of all features assigned to a 
+particular metabolite in the function `summarize_metabolites()`.
+
+```{r}
+se.met = summarize_metabolites(info.assigned = info.assigned.use,
+                               info.features = info.features,
+                               se = se)
+
+all(rownames(se.met) %in% chem.forms.lipids)
+```
+
+The resulting SummarizedExperiment object contains information about 
+`r nrow(se)` metabolites that belong to the six lipids of interest.
+
+For each of the metabolites an anlysis of variance (ANOVA) is performed 
+followed by pairwise t-tests. The corresponding P-values are given in the 
+boxplots.
+
+```{r}
+## define pairwise comparisons
+my.comparisons = list( c("LD", "CON"), c("INSR", "CON"))
+
+## plot log-transformed intensities
+int = assays(se.met)$intensity.log2
+int = int[sort(rownames(int)), ]
+
+## boxplots with P-values using ggpubr
+for (i in 1:nrow(int)) {
+    dat.for.plot = na.omit(data.frame(intensity = int[i, ],
+                                      group = se.met$disease,
+                                      stringsAsFactors = FALSE))
+    print(ggboxplot(dat.for.plot,
+                    x = "group",
+                    y = "intensity",
+                    title = rownames(int)[i]) +
+              stat_compare_means(method = "anova") +
+              stat_compare_means(method = "t.test", 
+                                 comparisons = my.comparisons))
+}
+
+```
+
+All but one metabolite (C44H80N1O8P1) show significant differences between
+LD and controls.
+
+# Session info
+
+```{r sessionInfo, echo=FALSE}
+session_info()
+```

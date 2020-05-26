@@ -4,8 +4,13 @@
 \alias{combine_feature_intensities}
 \title{Combine feature intensities of several spectra}
 \usage{
-combine_feature_intensities(feature.files, id.samples = NULL,
-  pheno = NULL, cor.cutoff = 0.9, verbose = FALSE)
+combine_feature_intensities(
+  feature.files,
+  id.samples = NULL,
+  pheno = NULL,
+  cor.cutoff = 0.9,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{feature.files}{Character vector. Names of files with feature

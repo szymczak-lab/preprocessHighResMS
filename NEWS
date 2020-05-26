@@ -2,14 +2,19 @@ CHANGES IN VERSION 0.99.0
 -------------------------
 
 Features
-+ Initial version with full functionality
++ initial version with full functionality
 
 
 CHANGES IN VERSION 0.99.0
 -------------------------
+
+New features
++ examples in functions
++ vignette
 
 Bug Fixes
 + isotope identifiers specify each isotope including the monoisotopic ones such
 as [12]C and [16]O
 + select local maximum with maximal intensity within 1ppm around theoretical
 mz value instead of closest local maximum
+

@@ -4,8 +4,14 @@
 \alias{get_info_adduct}
 \title{Adduct calculations}
 \usage{
-get_info_adduct(chem.forms, adduct.name = "M+H", adducts, isotopes,
-  threshold = 20, rel_to = 0)
+get_info_adduct(
+  chem.forms,
+  adduct.name = "M+H",
+  adducts,
+  isotopes,
+  threshold = 20,
+  rel_to = 0
+)
 }
 \arguments{
 \item{chem.forms}{Vector of character strings with chemical formulas.}

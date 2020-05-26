@@ -1,4 +1,5 @@
 
+
 ## todo:
 ## generate_connectivity_matrix:
 ## add biochemical relationships
@@ -43,13 +44,13 @@ prepare_data_for_annotation <- function(se) {
                                  )))
     for (i in seq_len(nrow(se))) {
         ## get indices of samples with detected peak
-        ind = which(peak.all[i, ] == 1)
+        ind = which(peak.all[i,] == 1)
         if (length(ind) == 0) {
             stop(paste("no peaks detected for feature", i))
         }
         mz = median(mz.all[i, ind], na.rm = TRUE)
         intensity = sum(int.all[i, ind], na.rm = TRUE)
-        dat[i, ] = c(mz, intensity, length(ind))
+        dat[i,] = c(mz, intensity, length(ind))
     }
 
     dat = data.frame(id = rownames(se),
@@ -124,7 +125,7 @@ find_hits <- function(info.features, dat, ppm) {
     ## remove orphan isotopes (monoisotope missing)
     info.features.iso = info.features[which(info.features$abundance < 100 &
                                                 info.features$id %in%
-                                                colnames(hits.m)), ]
+                                                colnames(hits.m)),]
     if (nrow(info.features.iso) > 0) {
         orphans = NULL
         for (i in seq_len(nrow(info.features.iso))) {
@@ -147,7 +148,7 @@ find_hits <- function(info.features, dat, ppm) {
 
     ## remove measured features without any hits
     no.hits.r = apply(hits.m, 1, sum)
-    hits.m = hits.m[which(no.hits.r > 0), ]
+    hits.m = hits.m[which(no.hits.r > 0),]
 
     return(hits.m)
 }
@@ -202,9 +203,9 @@ compute_prior_prob <- function(hits.m,
                                ppm.unknown = NULL,
                                pr.limit = 1e-05) {
     rownames(info.features) = info.features$id
-    info.features = info.features[colnames(hits.m), ]
+    info.features = info.features[colnames(hits.m),]
     rownames(dat) = dat$id
-    dat = dat[rownames(hits.m), ]
+    dat = dat[rownames(hits.m),]
 
     prior.m = matrix(
         0,
@@ -234,7 +235,7 @@ compute_prior_prob <- function(hits.m,
                     2)
 
         ## new: restrict to possible hits
-        d = d * hits.m[i, ]
+        d = d * hits.m[i,]
 
         if (!is.null(ppm.unknown)) {
             d.unknown = exp((-0.5 * 1 / (sigma[i] ^ 2)) *
@@ -244,17 +245,19 @@ compute_prior_prob <- function(hits.m,
         }
         d = d * pk
         d[which(d < pr.limit)] = 0
-        prior.m[i, ] = d / sum(d)
+        prior.m[i,] = d / sum(d)
     }
 
     ## remove column with unknown if not relevant
     if (!is.null(ppm.unknown)) {
         sum.unknown = sum(prior.m[, "unknown"])
         if (sum.unknown == 0) {
-            print(paste("column unknown removed since none of the",
-                        "probabilities is > 0!"))
+            print(paste(
+                "column unknown removed since none of the",
+                "probabilities is > 0!"
+            ))
             prior.m =
-                prior.m[, -which(colnames(prior.m) == "unknown")]
+                prior.m[,-which(colnames(prior.m) == "unknown")]
         }
     }
 
@@ -303,7 +306,7 @@ generate_connectivity_matrix <- function(info.features,
                                          ids.use = NULL,
                                          ratios = FALSE) {
     if (!is.null(ids.use)) {
-        info.features = info.features[which(info.features$id %in% ids.use), ]
+        info.features = info.features[which(info.features$id %in% ids.use),]
         if (nrow(info.features) == 0) {
             stop("no features left in info.features!")
         }
@@ -323,7 +326,7 @@ generate_connectivity_matrix <- function(info.features,
                             info.features$abundance == 100)
             if (length(ind) > 1) {
                 ind = combn(ind, 2)
-                ind = rbind(t(ind), t(ind[2:1, ]))
+                ind = rbind(t(ind), t(ind[2:1,]))
                 conn.m[ind] = 1
             }
         }
@@ -336,14 +339,14 @@ generate_connectivity_matrix <- function(info.features,
                 ind = combn(ind, 2)
                 if (ratios) {
                     ind.t = t(ind)
-                    ind.t.rev = t(ind[2:1, ])
+                    ind.t.rev = t(ind[2:1,])
                     for (r in seq_len(nrow(ind.t))) {
-                        ab = info.features$abundance[ind.t[r, ]]
+                        ab = info.features$abundance[ind.t[r,]]
                         conn.m[ind.t[r, , drop = FALSE]] = ab[1] / ab[2]
                         conn.m[ind.t.rev[r, , drop = FALSE]] = ab[2] / ab[1]
                     }
                 } else {
-                    ind = rbind(t(ind), t(ind[2:1, ]))
+                    ind = rbind(t(ind), t(ind[2:1,]))
                     conn.m[ind] = 1
                 }
             }
@@ -471,15 +474,15 @@ compute_posterior_prob <- function(prior.prob,
     allsampcomp = matrix(0, no.its, nrow(prior.prob))
 
     ## Gibbs sampler
-    pot.bio <- apply(bio.m[sampcomp, ], 2, sum)
-    pot.add <- apply(add.m[sampcomp, ], 2, sum)
-    pot.iso <- apply(iso.m[sampcomp, ], 2, sum)
+    pot.bio <- apply(bio.m[sampcomp,], 2, sum)
+    pot.add <- apply(add.m[sampcomp,], 2, sum)
+    pot.iso <- apply(iso.m[sampcomp,], 2, sum)
     for (it in seq_len(no.its))
     {
         ordine <- sample(nrow(prior.prob))
         for (thism in ordine)
         {
-            po <- prior.prob[thism, ]
+            po <- prior.prob[thism,]
 
             p.add <-
                 pot.add - colSums(add.m[sampcomp[thism], , drop = FALSE])
@@ -512,7 +515,7 @@ compute_posterior_prob <- function(prior.prob,
                     pot.iso - iso.m[, oldval] + iso.m[, sampcomp[thism]]
             }
         }
-        allsampcomp[it, ] <- sampcomp
+        allsampcomp[it,] <- sampcomp
         #        if (v) {
         if (it %% 250 == 0)
         {
@@ -598,7 +601,7 @@ assign_features <- function(post.prob,
         X = seq_len(nrow(post.prob)),
         FUN = function(i)
         {
-            ind = which.max(post.prob[i,])
+            ind = which.max(post.prob[i, ])
             return(c(
                 f.meas = rownames(post.prob)[i],
                 f.theo = colnames(post.prob)[ind],
@@ -626,8 +629,8 @@ assign_features <- function(post.prob,
         f.rm = NULL
         for (f in f.theo.mult)
         {
-            temp = info.assigned[which(info.assigned$f.theo == f), ]
-            dat.temp = dat[which(dat$id %in% temp$f.meas), ]
+            temp = info.assigned[which(info.assigned$f.theo == f),]
+            dat.temp = dat[which(dat$id %in% temp$f.meas),]
             ind = which(dat.temp$no.peaks.detected ==
                             max(dat.temp$no.peaks.detected))
             if (length(ind) > 1)
@@ -644,10 +647,10 @@ assign_features <- function(post.prob,
             }
             f.rm = c(f.rm, temp[-ind, "f.meas"])
         }
-        info.assigned = info.assigned[-which(info.assigned$f.meas %in% f.rm), ]
+        info.assigned = info.assigned[-which(info.assigned$f.meas %in% f.rm),]
     }
 
-    return(info.assigned[which(info.assigned$prob >= cutoff.prob), ])
+    return(info.assigned[which(info.assigned$prob >= cutoff.prob),])
 
 }
 
@@ -708,7 +711,7 @@ summarize_metabolites <- function(info.assigned,
                                   se)
 {
     info.features.use = info.features[which(info.features$id %in%
-                                                info.assigned$f.theo), ]
+                                                info.assigned$f.theo),]
 
     int.f = assays(se)$intensity
     int.met = NULL

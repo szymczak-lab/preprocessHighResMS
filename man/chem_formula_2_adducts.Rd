@@ -4,9 +4,16 @@
 \alias{chem_formula_2_adducts}
 \title{Get adducts and isotopes for chemical formulas}
 \usage{
-chem_formula_2_adducts(chem.forms, isotopes, adducts,
-  adduct.names = NULL, ion.mode = "positive", rel_to = 0,
-  threshold = 20, verbose = TRUE)
+chem_formula_2_adducts(
+  chem.forms,
+  isotopes,
+  adducts,
+  adduct.names = NULL,
+  ion.mode = "positive",
+  rel_to = 0,
+  threshold = 20,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{chem.forms}{Vector of character strings with chemical formulas.}

@@ -4,9 +4,16 @@
 \alias{extract_feature_intensity}
 \title{Extract intensities of specific features from a single spectrum}
 \usage{
-extract_feature_intensity(spectrum.file, scanrange = c(1, 1),
-  info.features, ppm = 10, num.pts = 5, oneside.min = 1,
-  verbose = TRUE, res.dir = NULL)
+extract_feature_intensity(
+  spectrum.file,
+  scanrange = c(1, 1),
+  info.features,
+  ppm = 10,
+  num.pts = 5,
+  oneside.min = 1,
+  verbose = TRUE,
+  res.dir = NULL
+)
 }
 \arguments{
 \item{spectrum.file}{Character. Name of mzML file to read.}

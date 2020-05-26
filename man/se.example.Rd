@@ -4,8 +4,10 @@
 \name{se.example}
 \alias{se.example}
 \title{Feature level metabolomics data}
-\format{\code{\link[SummarizedExperiment]{RangedSummarizedExperiment-class}}
-object}
+\format{
+\code{\link[SummarizedExperiment]{RangedSummarizedExperiment-class}}
+object
+}
 \source{
 \url{https://www.omicsdi.org/dataset/metabolights_dataset/MTBLS162}
 }

@@ -1,0 +1,38 @@
+
+---
+title: "preprocessHighResMS"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE, eval = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+This R package implements preprocessing methods for mass spectrometry data 
+generated with direct infusion high resolution technology (e.g. FT-ICR). 
+
+## Installation
+
+<!-- install.packages(c("ranger", "Boruta", "Umpire", "geoR", "MASS")) -->
+
+You can install the most recent version of preprocessHighResMS from GitHub as 
+follows:
+
+```{r, eval = FALSE}
+library(devtools)
+install_github("szymczak-lab/preprocessHighResMS")
+```
+
+## Usage
+
+A detailed user guide is available as vignette.
+
